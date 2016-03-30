@@ -17,7 +17,7 @@ function CircularAudioBuffer(slots) {
 // pseudo empty all buffers
 CircularAudioBuffer.prototype.reset = function() {
 	this.used = 0;
-	this.filled = 0;
+	this.filled = 0;	
 };
 
 // returns number of buffers that are filled
@@ -70,29 +70,36 @@ var circularBuffer = new CircularAudioBuffer(4);
 
 var emptyBuffer = audioCtx.createBuffer(channels, BUFFER, SAMPLE_RATE);
 
-
 scriptNode.onaudioprocess = onAudioProcess;
 //source.connect(scriptNode);
 if (!audioCtx.createGain) audioCtx.createGain = audioCtx.createGainNode;
 var gainNode = audioCtx.createGain();
-//source.connect(gainNode);
 //gainNode.connect(scriptNode);
 
-source.start();
+source.connect(gainNode);
+source.start(0);
 
+var aconnected;
 function startAudio() {
 	//gainNode.gain.value=0.1;
 	//scriptNode.connect(audioCtx.destination);
+	if(aconnected){
+		return;
+	}
+	aconnected=true;	
 	scriptNode.connect(gainNode);
 	gainNode.connect(audioCtx.destination);
 }
 
 function pauseAudio() {
-	scriptNode.disconnect();
+	//source.stop(0);
+	//source.noteOff(0);
+	//source.disconnect(scriptNode);
+	//scriptNode.disconnect();
+	//gainNode.disconnect();
 }
 
 // Give the node a function to process audio events
-var ggg;
 function onAudioProcess(audioProcessingEvent) {
 	var generated = circularBuffer.use();
 
@@ -106,12 +113,11 @@ function onAudioProcess(audioProcessingEvent) {
 		return;
 	}
 	if (!generated) {
-		console.log('buffer under run!!')
+		//console.log('buffer under run!!')
 		generated = emptyBuffer;
 	}
 
 	var outputBuffer = audioProcessingEvent.outputBuffer;
-	//console.log(outputBuffer.copyToChannel);
 	var offset = 0;
 	//https://github.com/mohayonao/web-audio-api-shim
 	outputBuffer.copyToChannel(generated.getChannelData(0), 0, offset);
